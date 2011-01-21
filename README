@@ -1,0 +1,99 @@
+== General Info ==
+pydetectfaces - Thin wrapper around OpenCV (http://opencv.willowgarage.com)
+for detection and marking faces in images
+
+The module can be used as API or in console for testing purposes. For usage
+and options:
+    $python pyfacedetect.py -h
+==== Sample input ====
+{{http://i.imgur.com/5Lq4O.jpg|Sample Input}}
+==== Sample output ====
+{{http://i.imgur.com/56aTg.jpg|Sample Output}}
+==== Json output ====
+{{{
+#!javascript
+
+[{"y": 205, "x": 104, "height": 35, "neighbors": 29, "width": 35}, 
+{"y": 83, "x": 182, "height": 36, "neighbors": 26, "width": 36}, 
+{"y": 6, "x": 359, "height": 34, "neighbors": 23, "width": 34}, 
+{"y": 7, "x": 301, "height": 41, "neighbors": 69, "width": 41}, 
+{"y": 25, "x": 129, "height": 33, "neighbors": 40, "width": 33}, 
+{"y": 32, "x": 427, "height": 30, "neighbors": 7, "width": 30}, 
+{"y": 85, "x": 76, "height": 43, "neighbors": 61, "width": 43}, 
+{"y": 16, "x": 269, "height": 38, "neighbors": 31, "width": 38}, 
+{"y": 40, "x": 335, "height": 41, "neighbors": 46, "width": 41}, 
+{"y": 61, "x": 292, "height": 41, "neighbors": 46, "width": 41}, 
+{"y": 84, "x": 137, "height": 34, "neighbors": 20, "width": 34}, 
+{"y": 93, "x": 338, "height": 35, "neighbors": 26, "width": 35}, 
+{"y": 205, "x": 400, "height": 38, "neighbors": 46, "width": 38}, 
+{"y": 21, "x": 160, "height": 44, "neighbors": 63, "width": 44}, 
+{"y": 25, "x": 229, "height": 35, "neighbors": 19, "width": 35}, 
+{"y": 36, "x": 207, "height": 33, "neighbors": 8, "width": 33}, 
+{"y": 106, "x": 394, "height": 40, "neighbors": 28, "width": 40}, 
+{"y": 131, "x": 176, "height": 36, "neighbors": 17, "width": 36}, 
+{"y": 141, "x": 104, "height": 37, "neighbors": 28, "width": 37}, 
+{"y": 182, "x": 364, "height": 32, "neighbors": 4, "width": 32}, 
+{"y": 223, "x": 172, "height": 50, "neighbors": 79, "width": 50}, 
+{"y": 15, "x": 2, "height": 40, "neighbors": 24, "width": 40}, 
+{"y": 32, "x": 460, "height": 37, "neighbors": 8, "width": 37}, 
+{"y": 45, "x": 378, "height": 44, "neighbors": 53, "width": 44}, 
+{"y": 88, "x": 260, "height": 41, "neighbors": 26, "width": 41}, 
+{"y": 162, "x": 32, "height": 38, "neighbors": 13, "width": 38}, 
+{"y": 220, "x": 223, "height": 43, "neighbors": 25, "width": 43}, 
+{"y": 225, "x": 335, "height": 47, "neighbors": 47, "width": 47}, 
+{"y": 8, "x": 87, "height": 43, "neighbors": 14, "width": 43}, 
+{"y": 39, "x": 40, "height": 43, "neighbors": 16, "width": 43}, 
+{"y": 83, "x": 0, "height": 37, "neighbors": 7, "width": 37}, 
+{"y": 96, "x": 460, "height": 37, "neighbors": 6, "width": 37}, 
+{"y": 108, "x": 214, "height": 42, "neighbors": 16, "width": 42}, 
+{"y": 131, "x": 306, "height": 38, "neighbors": 4, "width": 38}, 
+{"y": 231, "x": 274, "height": 50, "neighbors": 18, "width": 50}, 
+{"y": 166, "x": 446, "height": 45, "neighbors": 6, "width": 45}, 
+{"y": 240, "x": 63, "height": 50, "neighbors": 14, "width": 50}]
+}}}
+
+The module consists of 2 classes:
+    OcvDetector that wraps OpenCV Api for face detection and can be used bare
+    without the helper methods for loading images, marking faces, or getting
+    human friendly output
+
+    FaceDetect - full feature class that extends OcvDetector and adds helper
+    methods for loading/marking/outputing/saving images and dumping faces in
+    json.
+
+You can enable scaning for profiles for quantity of faces by setting 
+SCAN_FOR_PROFILES to True. That, however will give some overlapping rectangles.
+
+Try and tweak MIN_FACE_SIZE, HAAR_SCALE and MIN_NEIGHBORS so you can change the
+accuracy of the detection. For more info, read 
+http://opencv.willowgarage.com/documentation/python/objdetect_cascade_classification.html
+
+For speed, all images above 1000width or 1000h are scaled to 1000w or 1000h max.
+
+== API Usage ==
+{{{
+#!python
+
+face_detect = new FaceDetect()
+
+face_detect.image_from_file(file_name)#load from file
+
+face_detect.image_from_input(input_id)#load 1 frame from video input
+
+face_detect.detect_faces()#stores faces in local list
+
+face_detect.overlay_image(rgb_border = (255,0,0), width = 2) #overlays original image with rectangles around detected faces.
+
+face_detect.to_json()#returns json string with faces rectangles
+
+face_detect.output_image()#shows image in window
+
+face_detect.save_image(file_name)#saves overlaid image to file_name
+
+}}}
+
+== Dependencies ==
+
+OpenCV 2.1+
+
+argparse
