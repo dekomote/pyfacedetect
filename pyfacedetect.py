@@ -62,8 +62,19 @@ SCAN_FOR_PROFILES = False #Make this True to scan for profile faces also
 
 
 class OcvDetector(object):
+    """ Wraper class for OpenCV. Manages the image preparation and
+        face detection. """
 
     def load_image(self, image):
+        """ Sets self.image to the frame that will be analyzed for
+            faces. Based on the frame dimensions, calculates the
+            scaling. For speed/accuracy, examined image will not 
+            exceed 1000px height or width.
+
+            Positional arguments:
+                image -- cv.IplImage that will be stored for analyzing
+        """
+
         self.image = image
         if image.width > 1000 or image.height>1000:
             if image.width > image.height:
@@ -75,11 +86,19 @@ class OcvDetector(object):
                 
 
     def _prepare_image(self):
+        """ Helper method that scales the image, converts it to greyscale
+            and equalizes the histograms. This method provides significant
+            speed-up of the detection process """
+        
+        #Alocate the gray copies and the scaled copies
         gray_copy = cv.CreateImage((self.image.width, self.image.height),
                                         8, 1)
         scaled_image = cv.CreateImage(
                             (cv.Round(self.image.width / self.image_scale),
 			    cv.Round(self.image.height / self.image_scale)), 8, 1)
+        
+        #Convert the image to Grayscale and scale it by factor self.image_scale
+        #from load_image method
         cv.CvtColor(self.image, gray_copy, cv.CV_BGR2GRAY)
 
         cv.Resize(gray_copy, scaled_image, cv.CV_INTER_LINEAR)
@@ -88,16 +107,27 @@ class OcvDetector(object):
         return scaled_image
 
     def detect_faces(self, include_profile_faces = SCAN_FOR_PROFILES):
+        """ Detects the faces in self.image. For profile detection, turn
+            SCAN_FOR_PROFILES to True.
+
+            returns list of face rectangle dicts
+        """
 
         self._faces = []
         scaled_image = self._prepare_image()
+
+        #The cascade is loaded here. Change the path/filename to custom or other
+        #cascade for experimenting
         cascade = cv.Load('haarcascade_frontalface_alt2.xml')
 
+        #The magic method
         faces = cv.HaarDetectObjects(scaled_image, cascade, 
                                        cv.CreateMemStorage(0),
                                        HAAR_SCALE, MIN_NEIGHBORS,
                                        0,
                                        MIN_FACE_SIZE)
+
+        #If the flag for profiles is set to True
         if include_profile_faces:
             cascade = cv.Load('haarcascade_profileface.xml')
             faces.extend(cv.HaarDetectObjects(scaled_image, cascade,
@@ -115,28 +145,49 @@ class OcvDetector(object):
 
 
 class FaceDetect(OcvDetector):
-    
+    """ FaceDetect adds utility methods for loading images from different
+        sources, saving output to file, dumping face rectangles as json,
+        and overlaying the image with the face rectangles """
 
     def __init__(self):
         super(OcvDetector, self).__init__()
-        self.is_overlayed = False
+        self.is_overlayed = False #We have to store this value so we dont
+        #save empty image
 
     def image_from_file(self, file_path):
+        """ Loads the detector with image from file. All major formats
+            supported.
+
+            Positional arguments:
+                file_path -- string The file path
+        """
 
         self.load_image(cv.LoadImage(file_path))
 
     def image_from_input(self, input_id):
-        """Usualy input ID is 0 for webcams in Linux/OSX if it is
+        """ Loads the detector with a frame from a capture device 
+        (webcam/tv-card). Usualy input ID is 0 for webcams in Linux/OSX if it is
         default input. """
 
         capture = cv.CaptureFromCAM(input_id)
         if capture:
-            frame = cv.QueryFrame(capture)
+            frame = cv.QueryFrame(capture)#query the capture device for a frame
             self.load_image(frame)
+            #We must hold a reference to the capture device. GC colects it before
+            #it queries a frame and segfaults happen
             self.capture = capture
 
     def overlay_image(self, rgb_border = (255, 0, 0,), width = 2):
-        
+        """ Overlays IplImage with rectangles around the detected faces.
+            The stored image will be changed (drawn) and we can save it, or
+            show it.
+
+            Keyword arguments:
+
+            rgb_border -- tuple Color of the rectangle's border, defaults to red
+            width -- int Width of the rectangle's border
+        """
+
         if not self._faces:
             self.detect_faces()
 
@@ -149,17 +200,27 @@ class FaceDetect(OcvDetector):
         return self.image
 
     def save_image(self, filename):
+        """ Saves the overlayed image to a file.
+            
+            Positional arguments:
+            filename -- string The file name
+        """
+
         if not self.is_overlayed:
             self.overlay_image()
 
         return cv.SaveImage(filename, self.image)
 
     def show_image(self):
+        """ Shows the image in OpenCV's HIGHGUI window. For testing only. """
+
         cv.NamedWindow('Output', 1)
         cv.ShowImage('Output', self.image)
         cv.WaitKey(100000)
 
     def to_json(self):
+        """ Dumps the face rectangles to json string. Can be used for HTML/JS
+            auto face taggers in web services etc. """
 
         return dumps(self._faces)
 
